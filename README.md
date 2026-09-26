@@ -70,3 +70,22 @@ Stop the backend and delete:
 Server/data/db.json
 ```
 Then start the backend again.
+
+## 👥 Team Members & Contribution
+
+| Team Member | Role | Contribution |
+|---|---|---:|
+| **Yash Masne** | Team Leader | **35%** |
+| Prathmesh Borade | Member | **10%** |
+| Prathmesh Yerawar | Member | **20%** |
+| Tushar Ranjan Pasayat | Member | **15%** |
+| Chandrashekhar Samshete | Member | **20%** |
+| **Total** | | **100%** |
+
+### Contribution Details
+
+- **Yash Masne — 35%:** Project coordination, frontend development, backend integration, booking features, GitHub management, testing and presentation.
+- **Prathmesh Borade — 10%:** Frontend/UI assistance and design improvements.
+- **Prathmesh Yerawar — 20%:** Backend development, REST APIs and server-side functionality.
+- **Tushar Ranjan Pasayat — 15%:** Booking functionality and accommodation management.
+- **Chandrashekhar Samshete — 20%:** Testing, debugging, documentation and project validation.
