@@ -7,6 +7,7 @@ import AddressLink from "../AddressLink";
 import { WishlistContext } from "../WishlistContext";
 import { UserContext } from "../UserContext";
 import { useToast } from "../ToastContext";
+import PlaceReviews from "../PlaceReviews";
 import {
   FaStar,
   FaHeart,
@@ -126,9 +127,9 @@ export default function PlacePage() {
               {place.rating ? Number(place.rating).toFixed(2) : "4.90"}
             </span>
             <span>·</span>
-            <span className="underline font-medium">
+            <a href="#reviews" className="underline font-medium hover:text-gray-900">
               {place.reviewsCount || 12} reviews
-            </span>
+            </a>
             <span>·</span>
             <AddressLink className="text-gray-700 underline font-medium">
               {place.address}
@@ -257,6 +258,11 @@ export default function PlacePage() {
           <BookingWidget place={place} />
         </div>
       </div>
+
+      <PlaceReviews
+        place={place}
+        onSummaryChange={(summary) => setPlace((prev) => ({ ...prev, ...summary }))}
+      />
     </div>
   );
 }

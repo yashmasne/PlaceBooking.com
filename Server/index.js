@@ -276,6 +276,7 @@ async function readDb() {
     }
     parsed.wishlists = parsed.wishlists || {};
     parsed.payments = Array.isArray(parsed.payments) ? parsed.payments : [];
+    parsed.reviews = Array.isArray(parsed.reviews) ? parsed.reviews : [];
 
     const existingIds = new Set(parsed.places.map((p) => String(p._id)));
     let added = false;
@@ -294,6 +295,7 @@ async function readDb() {
     const initialDb = structuredClone(seedDb);
     initialDb.places.push(...new30Accommodations);
     initialDb.payments = [];
+    initialDb.reviews = [];
     await writeDb(initialDb);
     return initialDb;
   }
@@ -325,13 +327,31 @@ function publicUser(user) {
   return { _id: user._id, name: user.name, email: user.email };
 }
 
+// Seeded listings carry a baseline rating/count; written guest reviews are blended on top.
+function placeRatingSummary(place) {
+  const baseRating = Number(place.rating) || 4.9;
+  const baseCount = Number(place.reviewsCount) || 12;
+  const written = (db.reviews || []).filter((review) => review.place === place._id);
+  const count = baseCount + written.length;
+  const total = baseRating * baseCount + written.reduce((sum, review) => sum + review.rating, 0);
+  return { rating: Math.round((total / count) * 100) / 100, reviewsCount: count };
+}
+
+function publicReview(review) {
+  const verifiedStay = db.bookings.some(
+    (booking) => booking.place === review.place && booking.user === review.user
+  );
+  return { ...review, verifiedStay };
+}
+
 function publicPlace(place) {
+  const { rating, reviewsCount } = placeRatingSummary(place);
   return {
     ...place,
     owner: place.owner || null,
     category: place.category || "City apartments",
-    rating: Number(place.rating) || 4.9,
-    reviewsCount: Number(place.reviewsCount) || 12,
+    rating,
+    reviewsCount,
     bedrooms: Number(place.bedrooms) || 1,
     beds: Number(place.beds) || 1,
     bathrooms: Number(place.bathrooms) || 1,
@@ -615,6 +635,64 @@ app.get("/api/places/:id", (req, res) => {
   const place = db.places.find((item) => item._id === req.params.id);
   if (!place) return sendError(res, 404, "Place not found");
   return res.json(publicPlace(place));
+});
+
+app.get("/api/places/:id/reviews", (req, res) => {
+  const place = db.places.find((item) => item._id === req.params.id);
+  if (!place) return sendError(res, 404, "Place not found");
+  const reviews = (db.reviews || [])
+    .filter((review) => review.place === place._id)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .map(publicReview);
+  return res.json({ reviews, ...placeRatingSummary(place) });
+});
+
+// One review per guest per place: posting again updates the existing review.
+app.post("/api/places/:id/reviews", requireAuth, async (req, res) => {
+  const place = db.places.find((item) => item._id === req.params.id);
+  if (!place) return sendError(res, 404, "Place not found");
+  if (place.owner && place.owner === req.user._id) {
+    return sendError(res, 403, "You can't review your own listing");
+  }
+
+  const rating = Number(req.body?.rating);
+  const comment = String(req.body?.comment || "").trim();
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return sendError(res, 400, "Rating must be a whole number from 1 to 5");
+  }
+  if (comment.length < 10 || comment.length > 1000) {
+    return sendError(res, 400, "Review must be between 10 and 1000 characters");
+  }
+
+  const reviews = db.reviews || [];
+  const existing = reviews.find((review) => review.place === place._id && review.user === req.user._id);
+  const now = new Date().toISOString();
+  const review = existing
+    ? { ...existing, rating, comment, userName: req.user.name, updatedAt: now }
+    : {
+        _id: crypto.randomUUID(),
+        place: place._id,
+        user: req.user._id,
+        userName: req.user.name,
+        rating,
+        comment,
+        createdAt: now,
+      };
+
+  const nextReviews = existing
+    ? reviews.map((item) => (item._id === existing._id ? review : item))
+    : [...reviews, review];
+  await writeDb({ ...db, reviews: nextReviews });
+  return res.status(existing ? 200 : 201).json({ review: publicReview(review), ...placeRatingSummary(place) });
+});
+
+app.delete("/api/reviews/:id", requireAuth, async (req, res) => {
+  const review = (db.reviews || []).find((item) => item._id === req.params.id);
+  if (!review) return sendError(res, 404, "Review not found");
+  if (review.user !== req.user._id) return sendError(res, 403, "You can only delete your own review");
+  await writeDb({ ...db, reviews: db.reviews.filter((item) => item._id !== review._id) });
+  const place = db.places.find((item) => item._id === review.place);
+  return res.json({ success: true, ...(place ? placeRatingSummary(place) : {}) });
 });
 
 app.get("/api/wishlist", requireAuth, (req, res) => {
