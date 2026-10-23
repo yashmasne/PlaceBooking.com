@@ -1,70 +1,86 @@
-# PlaceBooking.com — VS Code setup
+# PlaceBooking.com — Visual Studio Code Setup Guide
 
-## Requirements
-- Node.js 18+ (Node.js 20 LTS recommended)
-- VS Code
+## System Requirements
+- Node.js 18+ (Node.js 20 or 24 LTS recommended)
+- Visual Studio Code on Windows / macOS / Linux
 
-MongoDB, Cloudinary and Razorpay are **not required** for the local demo.
+External services (*MongoDB, Cloudinary, Razorpay*) are **optional**; the project runs fully with zero external dependencies in local demo mode.
 
-## 1. Open the project
-Open `PlaceBooking.com-master` in VS Code. You should see `Server` and `Frontend`.
+---
 
-## 2. Backend terminal
+## 1. Open the Project
+Open the root directory `PlaceBooking.com-master` in VS Code.
+
+You will find ready-to-use configurations in `.vscode/`:
+- **`.vscode/tasks.json`**: Pre-configured tasks to start the backend, start the frontend, run tests, and build.
+- **`.vscode/launch.json`**: Debug configuration for the Node.js backend.
+
+---
+
+## 2. Running via Integrated Terminals
+
+### Terminal 1: Backend API
 ```powershell
 cd Server
 npm install
 npm run dev
 ```
 
-Expected:
-```text
-PlaceBooking.com backend is running
-API: http://localhost:8000/api
-Test: http://localhost:8000/api/test
-Storage: Local JSON database
-Images: Local uploads
-Payment: Demo mode
-```
+Server verification:
+- Root Test: http://localhost:8000/api/test
+- Health Check: http://localhost:8000/api/health
+- Places Endpoint: http://localhost:8000/api/places
 
-Test: open http://localhost:8000/api/test
-
-## 3. Frontend terminal
-Open a second terminal:
+### Terminal 2: Frontend Web App
 ```powershell
 cd Frontend
 npm install
 npm run dev
 ```
 
-Open the Vite URL, normally http://localhost:5173.
+Open the Vite local server:
+```text
+http://localhost:5173
+```
 
-## 4. Demo flow
-1. Register
-2. Login
-3. Open Account → My Places
-4. Add a place
-5. Optionally upload photos
-6. Open the place from the home page
-7. Select dates and guests
-8. Book the place
-9. Open My Bookings
-10. Open the booking and click Pay — local demo mode completes without Razorpay credentials
+---
 
-## Data location
-Local data is saved automatically to:
-`Server/data/db.json`
+## 3. Running Automated Tests & Production Builds
 
-Local uploaded images are saved to:
-`Server/uploads/`
+### Run Unit Tests
+```powershell
+cd Server
+npm test
+```
 
-To reset the demo database, stop the backend and delete `Server/data/db.json`, then start the backend again.
+### Validate Frontend Production Build
+```powershell
+cd Frontend
+npm run build
+```
 
-## Optional integrations
-### MongoDB
-Set `USE_MONGO=true` and provide your own MongoDB integration before deploying. Local demo mode intentionally does not require MongoDB.
+---
 
-### Cloudinary
-Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in `Server/.env`. Uploads will then use Cloudinary instead of local storage.
+## 4. Configuration & Environment Variables
 
-### Razorpay
-Set `KEY_ID` and `KEY_SECRET` to real test credentials. The backend will use Razorpay instead of demo payment mode.
+- **Backend Configuration (`Server/.env` & `Server/.env.example`):**
+  - `PORT`: Port for the REST API (default: `8000`).
+  - `CLIENT_URL`: Allowed frontend origin for CORS (default: `http://localhost:5173`).
+  - `JWT_SECRET`: Secret key for authentication token cookies.
+  - `USE_MONGO`: Set to `true` to enable MongoDB instead of local JSON storage.
+  - `MONGO_URL`: MongoDB connection URI (e.g. `mongodb://127.0.0.1:27017/placebooking`).
+  - `CLOUDINARY_*`: Optional Cloudinary image upload credentials.
+  - `KEY_ID` & `KEY_SECRET`: Optional Razorpay payment gateway credentials.
+
+- **Frontend Configuration (`Frontend/.env` & `Frontend/.env.example`):**
+  - `VITE_API_URL`: Backend API URL (default: `http://localhost:8000/api`).
+  - `VITE_UPLOADS_URL`: Base URL for local image uploads (default: `http://localhost:8000`).
+
+---
+
+## 5. Resetting Local Demonstration Data
+Local data is persisted automatically in:
+```text
+Server/data/db.json
+```
+To reset to factory sample listings, stop the backend server, delete `Server/data/db.json`, and restart the backend.

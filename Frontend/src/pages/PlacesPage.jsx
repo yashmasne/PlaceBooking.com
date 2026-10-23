@@ -64,14 +64,22 @@ export default function PlacesPage() {
                 <p className="font-semibold mt-3">₹ {place.price} / night</p>
               </div>
             </div>
-            <div className="flex justify-end gap-6 border-t p-3">
-              <Link aria-label="Edit place" to={`/account/places/${place._id}`}>
-                <FiEdit3 size={24} />
+            <div className="flex items-center justify-between border-t p-3 px-4 bg-gray-50/50">
+              <Link
+                to={`/place/${place._id}`}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                View public listing →
               </Link>
-              <button type="button" aria-label="Delete place"
-                className="bg-transparent p-0" onClick={() => handleDelete(place._id)}>
-                <MdDelete size={24} />
-              </button>
+              <div className="flex items-center gap-5">
+                <Link aria-label="Edit place" to={`/account/places/${place._id}`} className="text-gray-600 hover:text-black">
+                  <FiEdit3 size={20} />
+                </Link>
+                <button type="button" aria-label="Delete place"
+                  className="bg-transparent p-0 text-red-500 hover:text-red-700 cursor-pointer" onClick={() => handleDelete(place._id)}>
+                  <MdDelete size={22} />
+                </button>
+              </div>
             </div>
           </div>
         ))}

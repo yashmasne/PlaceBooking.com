@@ -1,75 +1,44 @@
 # PlaceBooking.com
 
-A full-stack place booking application for local development and classroom presentation.
+A premium full-stack accommodation booking platform inspired by Airbnb, engineered for commercial-grade aesthetics, responsive discovery, and seamless reservation workflows.
 
 ## Stack
-- React 18 + Vite
-- Tailwind CSS
-- Node.js + Express
-- JWT + HTTP-only cookies
-- bcrypt password hashing
-- Local JSON persistence for zero-setup development
-- Local image uploads by default
-- Optional MongoDB, Cloudinary and Razorpay integrations
+- **Frontend:** React 18, Vite, Tailwind CSS, React Router v6, React Icons, Date-fns, Axios
+- **Backend:** Node.js, Express, JWT, HTTP-only Cookies, Bcrypt
+- **Persistence:** Local JSON database for zero-setup development + full MongoDB Mongoose integration
+- **Media & Payments:** Local file uploads + optional Cloudinary and Razorpay integration
 
-## Project structure
-```text
-PlaceBooking.com-master/
-├── Server/
-│   ├── data/                 # created automatically
-│   ├── uploads/              # local images
-│   ├── models/               # retained Mongoose schemas for future Mongo mode
-│   ├── index.js
-│   ├── .env
-│   └── package.json
-└── Frontend/
-    ├── src/
-    ├── public/
-    ├── .env
-    └── package.json
-```
+## Key Features
+- **Discovery & Categories:** Scrollable category filters (*Amazing views, Beachfront, Cabins, Countryside, Design stays, Pools, Lakefront, City apartments*) with instant live filtering.
+- **Search & Filters:** Real-time search across destinations, properties, price ranges, and guest capacities.
+- **Wishlists:** One-tap heart save/remove with persistent per-user storage.
+- **Property Details:** Comprehensive 2-column layout with photo lightbox, verified host highlights, amenities grid, and sticky booking card.
+- **Booking & Availability:** Date-range conflict protection, guest capacity enforcement, night math, and status tracking (*Payment Pending → Paid ✓*).
+- **Payment Verification:** Safe zero-credential demo checkout with HMAC-ready real Razorpay fallback.
+- **Hosting Portal:** Add, edit, and manage accommodations with photo uploads and category configurations.
 
-## Run
-### Terminal 1
+## Quick Start
+
+### Backend Server
 ```powershell
 cd Server
 npm install
 npm run dev
 ```
 
-### Terminal 2
+### Frontend Web App
 ```powershell
 cd Frontend
 npm install
 npm run dev
 ```
 
-Open the URL printed by Vite, normally `http://localhost:5173`.
+Then visit: `http://localhost:5173`
+API health endpoint: `http://localhost:8000/api/health`
 
-Backend test: `http://localhost:8000/api/test`
-
-## Local demo has no external service requirement
-You do not need to install or start MongoDB just to run the project. The backend automatically creates `Server/data/db.json` and persists users, places and bookings there.
-
-You also do not need Cloudinary to upload photos locally, and payment uses a demo checkout unless Razorpay credentials are configured.
-
-## Main features
-- Register / login / logout
-- Browse properties
-- Add, edit and delete owned properties
-- Upload photos
-- Booking date and guest validation
-- Prevent overlapping bookings
-- Booking history
-- Demo payment flow
-- Optional real Razorpay checkout
-
-## Reset demo data
-Stop the backend and delete:
-```text
-Server/data/db.json
-```
-Then start the backend again.
+## Automated Tests & Verification
+- Backend tests: `npm test` inside `Server/`
+- Frontend build: `npm run build` inside `Frontend/`
 
 ## 👥 Team Members & Contribution
 
@@ -81,11 +50,3 @@ Then start the backend again.
 | Tushar Ranjan Pasayat | Member | **15%** |
 | Chandrashekhar Samshete | Member | **20%** |
 | **Total** | | **100%** |
-
-### Contribution Details
-
-- **Yash Masne — 35%:** Project coordination, frontend development, backend integration, booking features, GitHub management, testing and presentation.
-- **Prathmesh Borade — 10%:** Frontend/UI assistance and design improvements.
-- **Prathmesh Yerawar — 20%:** Backend development, REST APIs and server-side functionality.
-- **Tushar Ranjan Pasayat — 15%:** Booking functionality and accommodation management.
-- **Chandrashekhar Samshete — 20%:** Testing, debugging, documentation and project validation.

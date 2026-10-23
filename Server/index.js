@@ -13,12 +13,24 @@ import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import mongoose from "mongoose";
 
 // PlaceBooking.com - local-first backend.
 // Local demo mode stores data in Server/data/db.json and images in Server/uploads.
 // MongoDB, Cloudinary and Razorpay remain optional integrations for deployment.
 
 dotenv.config();
+
+let isMongoConnected = false;
+if (process.env.USE_MONGO === "true" && process.env.MONGO_URL) {
+  try {
+    await mongoose.connect(process.env.MONGO_URL, { serverSelectionTimeoutMS: 3000 });
+    isMongoConnected = true;
+    console.log("Connected to MongoDB successfully.");
+  } catch (err) {
+    console.warn("MongoDB connection failed, continuing with local JSON database:", err.message);
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,37 +49,208 @@ const seedDb = {
   users: [],
   places: [
     {
-      _id: crypto.randomUUID(),
+      _id: "p1-amazing-views",
       owner: null,
-      title: "Cozy Pune Apartment",
-      address: "Koregaon Park, Pune, Maharashtra",
-      photos: [],
-      description: "A comfortable demo property for testing PlaceBooking locally.",
-      perks: ["wifi", "parking", "tv"],
-      extraInfo: "Demo listing. You can edit or delete it after registering.",
+      title: "The Glasshouse Cliff Villa",
+      address: "Lonavala, Maharashtra",
+      category: "Amazing views",
+      photos: [
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=80",
+      ],
+      description: "Perched atop scenic cliffs with panoramic Western Ghats views, floor-to-ceiling glass architecture, private infinity pool and private chef service.",
+      perks: ["wifi", "parking", "tv", "entrance"],
+      extraInfo: "Check-in at 2 PM. Complimentary artisan breakfast included.",
       checkIn: 14,
       checkOut: 11,
-      maxGuests: 3,
-      price: 1800,
+      maxGuests: 6,
+      bedrooms: 3,
+      beds: 3,
+      bathrooms: 3,
+      price: 8500,
+      rating: 4.96,
+      reviewsCount: 38,
       createdAt: new Date().toISOString(),
     },
     {
-      _id: crypto.randomUUID(),
+      _id: "p2-beachfront",
       owner: null,
-      title: "Modern City Stay",
-      address: "Viman Nagar, Pune, Maharashtra",
-      photos: [],
-      description: "Clean and modern accommodation close to restaurants and transport.",
-      perks: ["wifi", "entrance", "tv"],
-      extraInfo: "Demo listing for presentation and testing.",
+      title: "Sun-Drenched Beachfront Villa",
+      address: "Anjuna Beach, Goa",
+      category: "Beachfront",
+      photos: [
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=1200&q=80",
+      ],
+      description: "Direct walk-on beach access with private sun loungers, tropical garden patio, ocean view balcony, and high-speed fiber internet.",
+      perks: ["wifi", "parking", "tv", "pets", "entrance"],
+      extraInfo: "Direct beach gate with private keypad lock. Beach towels provided.",
       checkIn: 14,
       checkOut: 11,
       maxGuests: 4,
-      price: 2200,
+      bedrooms: 2,
+      beds: 2,
+      bathrooms: 2,
+      price: 6200,
+      rating: 4.92,
+      reviewsCount: 47,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      _id: "p3-cabins",
+      owner: null,
+      title: "Whispering Pines Alpine Cabin",
+      address: "Old Manali, Himachal Pradesh",
+      category: "Cabins",
+      photos: [
+        "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80",
+      ],
+      description: "Authentic deodar wood cabin nestled inside pine forests. Features wood-burning fireplace, cedar deck, mountain stream view, and stargazing skylights.",
+      perks: ["wifi", "parking", "radio", "entrance"],
+      extraInfo: "Firewood stocked daily. Warm fleece blankets and tea bar provided.",
+      checkIn: 13,
+      checkOut: 10,
+      maxGuests: 4,
+      bedrooms: 2,
+      beds: 2,
+      bathrooms: 1,
+      price: 4100,
+      rating: 4.89,
+      reviewsCount: 63,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      _id: "p4-countryside",
+      owner: null,
+      title: "Heritage Coffee Plantation Bungalow",
+      address: "Madikeri, Coorg, Karnataka",
+      category: "Countryside",
+      photos: [
+        "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80",
+      ],
+      description: "Surrounded by 40 acres of private organic Arabica coffee and spice groves. Colonial architecture with wraparound verandahs and farm-to-table cuisine.",
+      perks: ["wifi", "parking", "tv", "pets"],
+      extraInfo: "Includes guided morning plantation trail walk and fresh coffee tasting.",
+      checkIn: 14,
+      checkOut: 11,
+      maxGuests: 5,
+      bedrooms: 3,
+      beds: 3,
+      bathrooms: 2,
+      price: 5400,
+      rating: 4.94,
+      reviewsCount: 29,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      _id: "p5-design-stays",
+      owner: null,
+      title: "Architectural Concrete Design Sanctuary",
+      address: "Alibaug, Maharashtra",
+      category: "Design stays",
+      photos: [
+        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80",
+      ],
+      description: "Featured in Architectural Digest: cast concrete minimalist structure with private plunge pool, courtyard palm trees, and bespoke brass fittings.",
+      perks: ["wifi", "parking", "tv", "entrance"],
+      extraInfo: "Equipped with Sonos sound system and curated art collection.",
+      checkIn: 15,
+      checkOut: 11,
+      maxGuests: 4,
+      bedrooms: 2,
+      beds: 2,
+      bathrooms: 2,
+      price: 9800,
+      rating: 4.98,
+      reviewsCount: 52,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      _id: "p6-pools",
+      owner: null,
+      title: "Royal Oasis Pool Estate",
+      address: "Lake Pichola, Udaipur, Rajasthan",
+      category: "Pools",
+      photos: [
+        "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
+      ],
+      description: "Palatial estate featuring private turquoise courtyard pool, marble arches, jharokha balconies, and candlelit courtyard dining.",
+      perks: ["wifi", "parking", "tv", "entrance"],
+      extraInfo: "Butler service included. Rooftop dinner view of Lake Palace.",
+      checkIn: 14,
+      checkOut: 11,
+      maxGuests: 6,
+      bedrooms: 3,
+      beds: 4,
+      bathrooms: 3,
+      price: 11500,
+      rating: 4.97,
+      reviewsCount: 41,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      _id: "p7-lakefront",
+      owner: null,
+      title: "Serene Backwater Lakefront Lodge",
+      address: "Vembanad Lake, Alleppey, Kerala",
+      category: "Lakefront",
+      photos: [
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
+      ],
+      description: "Direct waterfront cottage with private wooden dock, kayak rentals, traditional Kerala thatched ceiling, and tranquil lotus canal views.",
+      perks: ["wifi", "parking", "pets", "entrance"],
+      extraInfo: "Kayaks and lifejackets available on the private jetty.",
+      checkIn: 13,
+      checkOut: 11,
+      maxGuests: 3,
+      bedrooms: 1,
+      beds: 2,
+      bathrooms: 1,
+      price: 4500,
+      rating: 4.91,
+      reviewsCount: 34,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      _id: "p8-city-apartments",
+      owner: null,
+      title: "Skyline Luxury Penthouse",
+      address: "Koregaon Park, Pune, Maharashtra",
+      category: "City apartments",
+      photos: [
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=1200&q=80",
+      ],
+      description: "Design-forward top floor residence in prime Koregaon Park. Workstation with 300 Mbps fiber, espresso bar, king suite, and sunset cocktail terrace.",
+      perks: ["wifi", "parking", "tv", "entrance"],
+      extraInfo: "Self check-in with smart keypad lock.",
+      checkIn: 14,
+      checkOut: 11,
+      maxGuests: 3,
+      bedrooms: 1,
+      beds: 2,
+      bathrooms: 1,
+      price: 2800,
+      rating: 4.93,
+      reviewsCount: 56,
       createdAt: new Date().toISOString(),
     },
   ],
   bookings: [],
+  wishlists: {},
 };
 
 let db;
@@ -90,6 +273,7 @@ async function readDb() {
     if (!parsed || !Array.isArray(parsed.users) || !Array.isArray(parsed.places) || !Array.isArray(parsed.bookings)) {
       throw new Error("Invalid local database format");
     }
+    parsed.wishlists = parsed.wishlists || {};
     return parsed;
   } catch {
     const initialDb = structuredClone(seedDb);
@@ -106,7 +290,16 @@ function publicUser(user) {
 }
 
 function publicPlace(place) {
-  return { ...place, owner: place.owner || null };
+  return {
+    ...place,
+    owner: place.owner || null,
+    category: place.category || "City apartments",
+    rating: Number(place.rating) || 4.9,
+    reviewsCount: Number(place.reviewsCount) || 12,
+    bedrooms: Number(place.bedrooms) || 1,
+    beds: Number(place.beds) || 1,
+    bathrooms: Number(place.bathrooms) || 1,
+  };
 }
 
 function publicBooking(booking) {
@@ -156,7 +349,11 @@ function normalizePlaceInput(body) {
   return {
     title: String(body.title || "").trim(),
     address: String(body.address || "").trim(),
-    photos: Array.isArray(body.addedPhotos) ? body.addedPhotos.filter(Boolean) : [],
+    photos: Array.isArray(body.addedPhotos)
+      ? body.addedPhotos.filter(Boolean)
+      : Array.isArray(body.photos)
+      ? body.photos.filter(Boolean)
+      : [],
     description: String(body.description || "").trim(),
     perks: Array.isArray(body.perks) ? body.perks.filter(Boolean) : [],
     extraInfo: String(body.extraInfo || "").trim(),
@@ -164,6 +361,10 @@ function normalizePlaceInput(body) {
     checkOut: Math.min(23, Math.max(0, Math.floor(toNumber(body.checkOut, 11)))),
     maxGuests: Math.max(1, Math.floor(toNumber(body.maxGuests, 1))),
     price: Math.max(0, toNumber(body.price, 0)),
+    category: String(body.category || "City apartments").trim(),
+    bedrooms: Math.max(1, Math.floor(toNumber(body.bedrooms, 1))),
+    beds: Math.max(1, Math.floor(toNumber(body.beds, 1))),
+    bathrooms: Math.max(1, Math.floor(toNumber(body.bathrooms, 1))),
   };
 }
 
@@ -171,10 +372,25 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
   return aStart < bEnd && aEnd > bStart;
 }
 
-const allowedOrigins = new Set([CLIENT_URL, "http://localhost:5173", "http://127.0.0.1:5173"]);
+const clientUrls = (process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map((u) => u.trim())
+  .filter(Boolean);
+const allowedOrigins = new Set([
+  ...clientUrls,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
+]);
+
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    if (!origin || allowedOrigins.has(origin) || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+      return callback(null, true);
+    }
     return callback(new Error("CORS origin not allowed"));
   },
   credentials: true,
@@ -222,7 +438,8 @@ async function saveUploadedFile(file) {
   const safeName = `${crypto.randomUUID()}${extension.replace(/[^a-zA-Z0-9.]/g, "")}`;
   const target = path.join(UPLOAD_DIR, safeName);
   await fs.rename(file.path, target);
-  return `${CLIENT_URL.replace(/:\d+$/, `:${PORT}`)}/uploads/${safeName}`;
+  const serverBase = (process.env.SERVER_URL || `http://localhost:${PORT}`).replace(/\/$/, "");
+  return `${serverBase}/uploads/${safeName}`;
 }
 
 async function saveImageFromLink(link) {
@@ -238,11 +455,21 @@ async function saveImageFromLink(link) {
 }
 
 app.get("/api/test", (_req, res) => {
-  res.json({ status: "ok", message: "PlaceBooking API is running", mode: "local-file" });
+  res.json({
+    status: "ok",
+    message: "PlaceBooking API is running",
+    mode: isMongoConnected ? "mongodb" : "local-file",
+  });
 });
 
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "healthy", database: "local-file", time: new Date().toISOString() });
+  res.json({
+    status: "healthy",
+    database: isMongoConnected ? "mongodb" : "local-file",
+    placesCount: db?.places?.length || 0,
+    bookingsCount: db?.bookings?.length || 0,
+    time: new Date().toISOString(),
+  });
 });
 
 app.post("/api/register", async (req, res) => {
@@ -310,12 +537,82 @@ app.post("/api/upload-by-link", requireAuth, async (req, res) => {
   }
 });
 
-app.get("/api/places", (_req, res) => res.json(db.places.map(publicPlace)));
+app.get("/api/places", (req, res) => {
+  let list = db.places;
+  const { category, search, minPrice, maxPrice, guests } = req.query;
+
+  if (category && category !== "All") {
+    list = list.filter((p) => (p.category || "").toLowerCase() === category.toLowerCase());
+  }
+  if (search) {
+    const q = search.trim().toLowerCase();
+    list = list.filter((p) =>
+      (p.title || "").toLowerCase().includes(q) ||
+      (p.address || "").toLowerCase().includes(q) ||
+      (p.description || "").toLowerCase().includes(q)
+    );
+  }
+  if (minPrice) {
+    const min = Number(minPrice);
+    if (!Number.isNaN(min)) list = list.filter((p) => p.price >= min);
+  }
+  if (maxPrice) {
+    const max = Number(maxPrice);
+    if (!Number.isNaN(max)) list = list.filter((p) => p.price <= max);
+  }
+  if (guests) {
+    const g = Number(guests);
+    if (!Number.isNaN(g)) list = list.filter((p) => p.maxGuests >= g);
+  }
+
+  return res.json(list.map(publicPlace));
+});
 
 app.get("/api/places/:id", (req, res) => {
   const place = db.places.find((item) => item._id === req.params.id);
   if (!place) return sendError(res, 404, "Place not found");
   return res.json(publicPlace(place));
+});
+
+app.get("/api/wishlist", requireAuth, (req, res) => {
+  db.wishlists = db.wishlists || {};
+  const userPlaceIds = new Set(db.wishlists[req.user._id] || []);
+  const places = db.places.filter((p) => userPlaceIds.has(p._id)).map(publicPlace);
+  return res.json(places);
+});
+
+app.get("/api/user-wishlist-ids", requireAuth, (req, res) => {
+  db.wishlists = db.wishlists || {};
+  return res.json(db.wishlists[req.user._id] || []);
+});
+
+app.post("/api/wishlist/:placeId", requireAuth, async (req, res) => {
+  const { placeId } = req.params;
+  const place = db.places.find((p) => p._id === placeId);
+  if (!place) return sendError(res, 404, "Place not found");
+
+  db.wishlists = db.wishlists || {};
+  const list = db.wishlists[req.user._id] || [];
+  const exists = list.includes(placeId);
+  if (exists) {
+    db.wishlists[req.user._id] = list.filter((id) => id !== placeId);
+  } else {
+    db.wishlists[req.user._id] = [...list, placeId];
+  }
+  await writeDb({ ...db });
+  return res.json({
+    wishlisted: !exists,
+    wishlist: db.wishlists[req.user._id],
+  });
+});
+
+app.delete("/api/wishlist/:placeId", requireAuth, async (req, res) => {
+  const { placeId } = req.params;
+  db.wishlists = db.wishlists || {};
+  const list = db.wishlists[req.user._id] || [];
+  db.wishlists[req.user._id] = list.filter((id) => id !== placeId);
+  await writeDb({ ...db });
+  return res.json({ success: true });
 });
 
 app.get("/api/user-places", requireAuth, (req, res) => {
@@ -383,15 +680,36 @@ app.get("/api/bookings", requireAuth, (req, res) => {
   res.json(db.bookings.filter((booking) => booking.user === req.user._id).map(publicBooking));
 });
 
+app.get("/api/bookings/:id", requireAuth, (req, res) => {
+  const booking = db.bookings.find((b) => b._id === req.params.id);
+  if (!booking) return sendError(res, 404, "Booking not found");
+  if (booking.user !== req.user._id) return sendError(res, 403, "Access denied");
+  return res.json(publicBooking(booking));
+});
+
+app.delete("/api/bookings/:id", requireAuth, async (req, res) => {
+  const booking = db.bookings.find((b) => b._id === req.params.id);
+  if (!booking) return sendError(res, 404, "Booking not found");
+  if (booking.user !== req.user._id) return sendError(res, 403, "Access denied");
+  const nextBookings = db.bookings.filter((b) => b._id !== booking._id);
+  await writeDb({ ...db, bookings: nextBookings });
+  return res.json({ success: true, message: "Booking cancelled" });
+});
+
 app.post("/api/placesBooking", requireAuth, async (req, res) => {
   const amount = toNumber(req.body?.amount, 0);
+  const bookingId = req.body?.bookingId || null;
   if (amount <= 0) return sendError(res, 400, "Invalid payment amount");
 
   if (process.env.KEY_ID && process.env.KEY_SECRET && !String(process.env.KEY_ID).startsWith("your_")) {
     try {
       const razorpay = new Razorpay({ key_id: process.env.KEY_ID, key_secret: process.env.KEY_SECRET });
-      const order = await razorpay.orders.create({ amount: Math.round(amount * 100), currency: "INR" });
-      return res.json({ mode: "razorpay", order, key: process.env.KEY_ID });
+      const order = await razorpay.orders.create({
+        amount: Math.round(amount * 100),
+        currency: "INR",
+        notes: { bookingId: bookingId || "", userId: req.user._id },
+      });
+      return res.json({ mode: "razorpay", order, key: process.env.KEY_ID, bookingId });
     } catch (error) {
       console.error("Razorpay error:", error.message);
       return sendError(res, 502, "Razorpay could not create the payment order");
@@ -399,18 +717,44 @@ app.post("/api/placesBooking", requireAuth, async (req, res) => {
   }
 
   // Local demo mode: no payment provider or credentials required.
-  return res.json({ mode: "demo", key: "demo", order: { id: `demo_${crypto.randomUUID()}`, amount: Math.round(amount * 100), currency: "INR" } });
+  return res.json({
+    mode: "demo",
+    key: "demo",
+    order: { id: `demo_${crypto.randomUUID()}`, amount: Math.round(amount * 100), currency: "INR" },
+    bookingId,
+  });
 });
 
 app.post("/api/verify", requireAuth, async (req, res) => {
-  const response = req.body?.response || {};
-  if (response.demo) return res.json({ verified: true, demo: true });
+  const { bookingId, response = {} } = req.body || {};
+  if (response.demo) {
+    if (bookingId) {
+      const booking = db.bookings.find((b) => b._id === bookingId);
+      if (booking && (booking.user === req.user._id || !booking.user)) {
+        booking.paymentStatus = "paid";
+        booking.paidAt = new Date().toISOString();
+        await writeDb({ ...db });
+      }
+    }
+    return res.json({ verified: true, demo: true, bookingId });
+  }
   if (!process.env.KEY_SECRET) return sendError(res, 503, "Payment verification is not configured");
-  if (!response.razorpay_order_id || !response.razorpay_payment_id || !response.razorpay_signature) return sendError(res, 400, "Invalid payment response");
+  if (!response.razorpay_order_id || !response.razorpay_payment_id || !response.razorpay_signature) {
+    return sendError(res, 400, "Invalid payment response");
+  }
   const body = `${response.razorpay_order_id}|${response.razorpay_payment_id}`;
   const expected = crypto.createHmac("sha256", process.env.KEY_SECRET).update(body).digest("hex");
   if (expected !== response.razorpay_signature) return sendError(res, 400, "Signature invalid");
-  return res.json({ verified: true });
+
+  if (bookingId) {
+    const booking = db.bookings.find((b) => b._id === bookingId);
+    if (booking && (booking.user === req.user._id || !booking.user)) {
+      booking.paymentStatus = "paid";
+      booking.paidAt = new Date().toISOString();
+      await writeDb({ ...db });
+    }
+  }
+  return res.json({ verified: true, bookingId });
 });
 
 app.use((_req, res) => sendError(res, 404, "API route not found"));
@@ -426,7 +770,7 @@ app.listen(PORT, () => {
   console.log(" PlaceBooking.com backend is running");
   console.log(` API:    http://localhost:${PORT}/api`);
   console.log(` Test:   http://localhost:${PORT}/api/test`);
-  console.log(" Storage: Local JSON database");
+  console.log(` Storage: ${isMongoConnected ? "MongoDB" : "Local JSON database"}`);
   console.log(` Images:  ${cloudinaryReady ? "Cloudinary" : "Local uploads"}`);
   console.log(` Payment: ${process.env.KEY_ID && !String(process.env.KEY_ID).startsWith("your_") ? "Razorpay" : "Demo mode"}`);
   console.log("========================================");

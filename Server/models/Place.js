@@ -13,6 +13,12 @@ const placeSchema = new mongoose.Schema(
     checkOut: { type: Number, default: 11 },
     maxGuests: { type: Number, min: 1, default: 1 },
     price: { type: Number, min: 0, default: 0 },
+    category: { type: String, default: "City apartments" },
+    rating: { type: Number, default: 4.9 },
+    reviewsCount: { type: Number, default: 12 },
+    bedrooms: { type: Number, default: 1 },
+    beds: { type: Number, default: 1 },
+    bathrooms: { type: Number, default: 1 },
   },
   { timestamps: true }
 );

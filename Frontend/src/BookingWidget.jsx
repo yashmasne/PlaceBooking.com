@@ -1,8 +1,9 @@
 import { useContext, useEffect, useState } from "react";
 import { differenceInCalendarDays } from "date-fns";
 import axios from "axios";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { UserContext } from "./UserContext.jsx";
+import { FaStar, FaShieldAlt } from "react-icons/fa";
 
 export default function BookingWidget({ place }) {
   const [checkIn, setCheckIn] = useState("");
@@ -13,6 +14,7 @@ export default function BookingWidget({ place }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { user } = useContext(UserContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) setName(user.name || "");
@@ -27,7 +29,7 @@ export default function BookingWidget({ place }) {
     setError("");
 
     if (!user) {
-      setError("Please log in to book this property.");
+      navigate("/login");
       return;
     }
     if (!checkIn || !checkOut || numberOfNights <= 0) {
@@ -62,62 +64,128 @@ export default function BookingWidget({ place }) {
 
   if (redirect) return <Navigate to={redirect} />;
 
-  const total = numberOfNights > 0 ? numberOfNights * place.price : 0;
+  const subtotal = numberOfNights > 0 ? numberOfNights * place.price : 0;
 
   return (
-    <div className="bg-white shadow p-4 rounded-2xl">
-      <div className="text-2xl text-center">
-        ₹ {place.price} <span className="text-base text-gray-500">/ night</span>
+    <div className="bg-white shadow-xl border border-gray-200/80 p-6 rounded-3xl sticky top-24">
+      {/* Price Header */}
+      <div className="flex items-baseline justify-between mb-4">
+        <div>
+          <span className="text-2xl font-bold text-gray-900">
+            ₹{place.price?.toLocaleString()}
+          </span>
+          <span className="text-gray-500 font-normal text-sm"> / night</span>
+        </div>
+        <div className="flex items-center gap-1 text-sm font-semibold text-gray-800">
+          <FaStar className="text-amber-500 text-xs" />
+          <span>{place.rating ? Number(place.rating).toFixed(2) : "4.90"}</span>
+          <span className="text-gray-400 font-normal">({place.reviewsCount || 12})</span>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded-xl mt-4" role="alert">
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs px-3.5 py-2.5 rounded-xl mb-4" role="alert">
           {error}
         </div>
       )}
 
-      <div className="border rounded-2xl mt-4 overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2">
-          <div className="py-3 px-4">
-            <label className="text-sm font-medium">Check in</label>
-            <input type="date" value={checkIn}
+      {/* Date & Guest Picker Box */}
+      <div className="border border-gray-300 rounded-2xl overflow-hidden shadow-inner bg-white">
+        <div className="grid grid-cols-2 divide-x divide-gray-300">
+          <div className="py-2.5 px-3.5">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-700">Check-in</label>
+            <input
+              type="date"
+              value={checkIn}
               min={new Date().toISOString().split("T")[0]}
-              onChange={(ev) => setCheckIn(ev.target.value)} />
+              onChange={(ev) => setCheckIn(ev.target.value)}
+              className="w-full text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer mt-0.5"
+            />
           </div>
-          <div className="py-3 px-4 border-t sm:border-t-0 sm:border-l">
-            <label className="text-sm font-medium">Check out</label>
-            <input type="date" value={checkOut}
+          <div className="py-2.5 px-3.5">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-700">Checkout</label>
+            <input
+              type="date"
+              value={checkOut}
               min={checkIn || new Date().toISOString().split("T")[0]}
-              onChange={(ev) => setCheckOut(ev.target.value)} />
+              onChange={(ev) => setCheckOut(ev.target.value)}
+              className="w-full text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer mt-0.5"
+            />
           </div>
         </div>
 
-        <div className="py-3 px-4 border-t">
-          <label className="text-sm font-medium">Number of guests</label>
-          <input type="number" value={numberOfGuests} min="1" max={place.maxGuests}
-            onChange={(ev) => setNumberOfGuests(ev.target.value)} />
+        <div className="border-t border-gray-300 py-2.5 px-3.5">
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-700">Guests</label>
+          <select
+            value={numberOfGuests}
+            onChange={(ev) => setNumberOfGuests(ev.target.value)}
+            className="w-full text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer mt-0.5"
+          >
+            {Array.from({ length: place.maxGuests || 4 }).map((_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {i + 1} {i === 0 ? "guest" : "guests"} (max {place.maxGuests})
+              </option>
+            ))}
+          </select>
         </div>
 
         {numberOfNights > 0 && (
-          <div className="py-3 px-4 border-t">
-            <label className="text-sm font-medium">Guest name</label>
-            <input type="text" value={name}
-              onChange={(ev) => setName(ev.target.value)} />
+          <div className="border-t border-gray-300 py-2.5 px-3.5 bg-gray-50/50">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-700">Guest name</label>
+            <input
+              type="text"
+              value={name}
+              placeholder="Full name for reservation"
+              onChange={(ev) => setName(ev.target.value)}
+              className="w-full text-xs font-medium text-gray-800 bg-transparent focus:outline-none mt-0.5"
+            />
           </div>
         )}
       </div>
 
-      {total > 0 && (
-        <div className="flex justify-between font-semibold mt-4 px-1">
-          <span>Total ({numberOfNights} night{numberOfNights !== 1 ? "s" : ""})</span>
-          <span>₹ {total}</span>
+      {/* Reserve Button */}
+      <button
+        type="button"
+        onClick={bookThisPlace}
+        disabled={loading}
+        className="w-full mt-4 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white font-semibold py-3 px-6 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 text-base"
+      >
+        {loading ? "Checking availability..." : user ? "Reserve Stay" : "Log in to reserve"}
+      </button>
+
+      <p className="text-center text-xs text-gray-400 mt-2">
+        You won't be charged yet
+      </p>
+
+      {/* Pricing Breakdown */}
+      {numberOfNights > 0 && (
+        <div className="mt-5 pt-4 border-t border-gray-200 text-sm text-gray-600 space-y-2.5">
+          <div className="flex justify-between">
+            <span className="underline">
+              ₹{place.price?.toLocaleString()} × {numberOfNights} {numberOfNights === 1 ? "night" : "nights"}
+            </span>
+            <span>₹{subtotal?.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="underline">Cleaning fee</span>
+            <span>₹0 (Included)</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="underline">PlaceBooking service fee</span>
+            <span>₹0 (Included)</span>
+          </div>
+          <div className="flex justify-between font-bold text-gray-900 text-base pt-3 border-t border-gray-200">
+            <span>Total before taxes</span>
+            <span>₹{subtotal?.toLocaleString()}</span>
+          </div>
         </div>
       )}
 
-      <button type="button" onClick={bookThisPlace} disabled={loading}
-        className="primary mt-4 disabled:opacity-50">
-        {loading ? "Booking..." : user ? "Book this place" : "Log in to book"}
-      </button>
+      {/* Assurance Footer */}
+      <div className="mt-5 pt-4 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-500">
+        <FaShieldAlt className="text-primary text-base shrink-0" />
+        <span>PlaceBooking Guarantee · Verified listing & support</span>
+      </div>
     </div>
   );
 }

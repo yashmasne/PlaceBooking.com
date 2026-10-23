@@ -1,64 +1,66 @@
 import React from "react";
-import { FaRegCalendarCheck, FaGlobe, FaFilter } from "react-icons/fa";  
+import { FaRegCalendarCheck, FaGlobeAmericas, FaSlidersH, FaShieldAlt } from "react-icons/fa";
 
-const FeaturesSection = () => {
+export default function FeaturesSection() {
+  const features = [
+    {
+      icon: FaRegCalendarCheck,
+      title: "Flexible Reservation Options",
+      description:
+        "Stays with flexible cancellation options make it seamless to adjust your travel plans whenever necessary.",
+    },
+    {
+      icon: FaGlobeAmericas,
+      title: "Handpicked Stays & Destinations",
+      description:
+        "Curated properties with verified photographs and direct communication with accommodating local hosts.",
+    },
+    {
+      icon: FaSlidersH,
+      title: "Tailored Discovery Filters",
+      description:
+        "Filter by specific architectural styles, price categories, guest counts, and essential perks for your ideal vacation.",
+    },
+    {
+      icon: FaShieldAlt,
+      title: "PlaceBooking Guarantee",
+      description:
+        "Every reservation includes booking confirmation, date overlap protection, and customer service assistance.",
+    },
+  ];
+
   return (
-    <div className="bg-white py-16">
-      <div className=" md:flex gap-24">
-       
-        <div className="mb-12">
-          <img
-            src="https://a0.muscache.com/im/pictures/7c7ccb34-a563-4f25-9fba-e4a46e2dbc3a.jpg?im_w=720"
-            alt=""
-            className="rounded-lg shadow-lg w-9 mb-6 "
-          />
-         
-            <h2 className="text-2xl font-semibold text-gray-800">
-              Enjoy some flexibility
-            </h2>
-            <p className="text-gray-600">
-              Stays with flexible cancellation make it easy to rebook if your
-              plans change.
-            </p>
-          
-        </div>
- 
-        <div className="mb-12 ">
-          <img
-            src="https://a0.muscache.com/im/pictures/d51be571-b8cf-4379-8d3f-7c5e56c9def5.jpg?im_w=720"
-            alt=""
-            className="rounded-lg shadow-lg w-9  mb-6 "
-          />
-           
-            <h2 className="text-2xl font-semibold text-gray-800">
-              More than 7M active listings
-            </h2>
-            <p className="text-gray-600">
-              Join more than 1 billion guests who’ve found getaways in over 220
-              countries and destinations.
-            </p>
-         
-        </div>
- 
-        <div>
-          <img
-            src="https://a0.muscache.com/im/pictures/a52e81a9-e390-4e74-b197-1aeeffd0e5ab.jpg?im_w=720"
-            alt=""
-            className="rounded-lg shadow-lg w-9  mb-6 "
-          />
-           
-            <h2 className="text-2xl font-semibold text-gray-800">
-              100+ filters for tailored stays
-            </h2>
-            <p className="text-gray-600">
-              Pick your price range, the number of rooms you want, and other key
-              amenities to find the stay that fits your needs.
-            </p>
-         
-        </div>
+    <div className="py-12 border-t border-gray-100">
+      <div className="text-center max-w-2xl mx-auto mb-10">
+        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+          Why reserve with PlaceBooking
+        </h2>
+        <p className="text-gray-500 text-sm mt-1.5">
+          Experience world-class hospitality, transparent pricing, and unforgettable stays.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {features.map((item, idx) => {
+          const Icon = item.icon;
+          return (
+            <div
+              key={idx}
+              className="p-6 rounded-3xl bg-gray-50 hover:bg-gray-100/80 transition-colors border border-gray-100 flex flex-col items-start"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-primary text-xl mb-4">
+                <Icon />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 mb-2">
+                {item.title}
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                {item.description}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
-};
-
-export default FeaturesSection;
+}

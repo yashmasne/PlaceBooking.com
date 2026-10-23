@@ -10,6 +10,7 @@ const bookingSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     phone: { type: String, trim: true },
     price: { type: Number, required: true, min: 0 },
+    paymentStatus: { type: String, default: "pending" },
   },
   { timestamps: true }
 );
