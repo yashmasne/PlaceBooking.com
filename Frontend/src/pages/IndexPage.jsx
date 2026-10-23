@@ -6,6 +6,7 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { FiSearch, FiSliders, FiX } from "react-icons/fi";
 import FeaturesSection from "./FeaturesSection.jsx";
+import RecentlyViewed from "../RecentlyViewed.jsx";
 
 export default function IndexPage() {
   const [places, setPlaces] = useState([]);
@@ -171,6 +172,8 @@ export default function IndexPage() {
           )}
         </div>
       </div>
+
+      {!hasActiveFilters && <RecentlyViewed />}
 
       {/* Results Header */}
       <div className="py-4 flex items-center justify-between text-xs sm:text-sm text-gray-500">

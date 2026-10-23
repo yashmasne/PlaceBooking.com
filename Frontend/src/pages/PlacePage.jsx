@@ -9,6 +9,7 @@ import { UserContext } from "../UserContext";
 import { useToast } from "../ToastContext";
 import PlaceReviews from "../PlaceReviews";
 import PlaceMap from "../PlaceMap";
+import { recordRecentlyViewed } from "../RecentlyViewed";
 import {
   FaStar,
   FaHeart,
@@ -47,6 +48,7 @@ export default function PlacePage() {
       .get(`/places/${id}`)
       .then((response) => {
         setPlace(response.data);
+        recordRecentlyViewed(response.data);
       })
       .catch((err) => {
         setError(err.response?.data?.error || "Property not found.");
