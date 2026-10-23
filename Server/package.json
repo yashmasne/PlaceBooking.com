@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/api.test.js",
+    "seed": "node scripts/seed-30-places.js",
     "dev": "node index.js",
     "start": "node index.js",
     "build": " npm install --force"

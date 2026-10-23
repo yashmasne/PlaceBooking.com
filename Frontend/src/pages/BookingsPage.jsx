@@ -74,13 +74,17 @@ export default function BookingsPage() {
                     )}
                     <BookingDates booking={booking} className="my-3 text-gray-600" />
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-200/60">
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-200/80">
                     <div className="flex gap-2 items-center text-lg font-bold text-gray-900">
                       <CiMoneyCheck1 className="text-2xl text-primary" />
-                      Total price: ₹{booking.price}
+                      ₹{booking.price?.toLocaleString()}
                     </div>
-                    <span className="text-sm text-primary font-medium">
-                      {isPaid ? "View details →" : "Pay now →"}
+                    <span className={`text-xs font-semibold py-1.5 px-3.5 rounded-full transition-all ${
+                      isPaid
+                        ? "text-gray-600 bg-white border border-gray-200"
+                        : "text-white bg-primary hover:bg-primary/95 shadow-sm"
+                    }`}>
+                      {isPaid ? "View Receipt →" : "Pay Now →"}
                     </span>
                   </div>
                 </div>

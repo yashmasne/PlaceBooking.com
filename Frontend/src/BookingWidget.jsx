@@ -159,24 +159,26 @@ export default function BookingWidget({ place }) {
 
       {/* Pricing Breakdown */}
       {numberOfNights > 0 && (
-        <div className="mt-5 pt-4 border-t border-gray-200 text-sm text-gray-600 space-y-2.5">
+        <div className="mt-5 pt-4 border-t border-gray-200 text-xs text-gray-600 space-y-2">
           <div className="flex justify-between">
             <span className="underline">
               ₹{place.price?.toLocaleString()} × {numberOfNights} {numberOfNights === 1 ? "night" : "nights"}
             </span>
-            <span>₹{subtotal?.toLocaleString()}</span>
+            <span className="font-medium text-gray-800">₹{subtotal?.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
-            <span className="underline">Cleaning fee</span>
-            <span>₹0 (Included)</span>
+            <span className="underline">Goods & Services Tax (12% GST)</span>
+            <span className="font-medium text-gray-800">₹{Math.round(subtotal * 0.12)?.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
-            <span className="underline">PlaceBooking service fee</span>
-            <span>₹0 (Included)</span>
+            <span className="underline">PlaceBooking service fee (5%)</span>
+            <span className="font-medium text-gray-800">₹{Math.round(subtotal * 0.05)?.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between font-bold text-gray-900 text-base pt-3 border-t border-gray-200">
-            <span>Total before taxes</span>
-            <span>₹{subtotal?.toLocaleString()}</span>
+          <div className="flex justify-between font-bold text-gray-900 text-sm pt-2.5 border-t border-gray-200">
+            <span>Total Payable Amount</span>
+            <span className="text-primary font-bold">
+              ₹{(subtotal + Math.round(subtotal * 0.12) + Math.round(subtotal * 0.05))?.toLocaleString()}
+            </span>
           </div>
         </div>
       )}

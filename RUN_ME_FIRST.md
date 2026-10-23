@@ -5,7 +5,8 @@ Welcome to the newly elevated **PlaceBooking** accommodation platform, transform
 ## Core Features Implemented & Verified
 
 ### 1. Modern Airbnb-Style Discovery & Homepage
-- **Category Navigation Bar:** Scrollable categories (*Amazing views, Beachfront, Cabins, Countryside, Design stays, Pools, Lakefront, City apartments*) with live real-time filtering.
+- **Category Navigation Bar:** Scrollable categories (*Amazing views, Beachfront, Cabins, Countryside, Design stays, Pools, Lakefront, Luxury stays, Mountains, City apartments*) with live real-time filtering.
+- **41 Distinct Indian Accommodations:** Diverse collection of luxury stays, heritage palaces, beach resorts, mountain chalets, treehouses, and city lofts across Jaipur, Kochi, Goa, Shimla, Lonavala, Mumbai, Bengaluru, Udaipur, Manali, Munnar, Alleppey, and more.
 - **Interactive Multi-Filter Bar:** Real-time search by destination, guest count, max price, and instant sorting (*Recommended, Price Low to High, Price High to Low, Highest Rated*).
 - **Curated Property Cards:** High-definition photography, star ratings, bedroom counts, nightly price in ₹ INR, and interactive Wishlist hearts.
 - **Why Reserve with Us Section:** Modern guarantee and reassurance badges.
@@ -18,19 +19,24 @@ Welcome to the newly elevated **PlaceBooking** accommodation platform, transform
 ### 3. Comprehensive Property Details (`/place/:id`)
 - **Rich Two-Column Layout:** Photo gallery, verified host banner, room setup (*guests, bedrooms, beds, baths*).
 - **Amenities Grid:** Wifi, Free parking, Smart TV, Pets allowed, Private entrance, and Audio with modern vector icons.
-- **Sticky Booking Widget:** Real-time date math, guest count controls, pricing breakdown, and PlaceBooking verified guarantee.
+- **Sticky Booking Widget:** Real-time date math, guest count controls, pricing breakdown (nightly rate, 12% GST, 5% service fee), and PlaceBooking verified guarantee.
 - **Full-Screen Photo Modal:** Fixed high-resolution lightbox viewer with smooth backdrop.
 
-### 4. Robust Booking Flow & Payment Verification
-- Server-side date validation (*check-out must be after check-in*).
-- Automatic overlapping reservation protection to prevent double-booking.
-- **Booking Status Management:** Seamless transition from `Payment Pending` to `Paid ✓`.
-- **Payment Modes:** Instant safe demo mode (default zero-credentials setup) or real Razorpay checkout.
+### 4. Multi-Option Payment System & Checkout
+- **Multiple Indian Payment Methods:**
+  - ⚡ **UPI:** Google Pay, PhonePe, Paytm, and custom UPI ID
+  - 💳 **Credit & Debit Cards:** Visa, MasterCard, RuPay, Amex with live 16-digit formatting
+  - 🏦 **Net Banking:** Popular Indian banks (HDFC, SBI, ICICI, Axis, Kotak, PNB)
+  - 👛 **Digital Wallets:** Paytm, Amazon Pay, PhonePe, MobiKwik
+- **Server-Side Security:** Integer paise calculations, anti-tampering amount validation, and Razorpay HMAC SHA256 signature verification.
+- **Webhook Integration (`POST /api/payment/webhook`):** Idempotent signature-verified event listener for `payment.captured` and `order.paid`.
+- **Booking Status Management:** Seamless transition from `Payment Pending` to `Paid ✓` with transaction receipts.
 - **Cancellation:** Ability for travelers to cancel their reservations with confirmation.
 
-### 5. Dual Database Architecture
-- **Local JSON Database (Default):** Zero setup required. Runs out-of-the-box storing users, places, bookings, and wishlists in `Server/data/db.json`.
-- **MongoDB Integration (Optional):** Set `USE_MONGO=true` and provide `MONGO_URL` to connect to MongoDB with full Mongoose schemas.
+### 5. Dual Database Architecture & Seed Script
+- **Local JSON Database (Default):** Zero setup required. Runs out-of-the-box storing users, 41 places, bookings, payments, and wishlists in `Server/data/db.json`.
+- **Repeatable Seed Script (`npm run seed`):** Idempotently verifies and seeds all 30 additional accommodations.
+- **MongoDB Integration (Optional):** Set `USE_MONGO=true` and provide `MONGO_URL` to connect to MongoDB with full Mongoose schemas (including `Payment.js`).
 
 ---
 

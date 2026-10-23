@@ -14,6 +14,7 @@ import fsSync from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
+import { new30Accommodations } from "./scripts/seed-30-places.js";
 
 // PlaceBooking.com - local-first backend.
 // Local demo mode stores data in Server/data/db.json and images in Server/uploads.
@@ -274,15 +275,50 @@ async function readDb() {
       throw new Error("Invalid local database format");
     }
     parsed.wishlists = parsed.wishlists || {};
+    parsed.payments = Array.isArray(parsed.payments) ? parsed.payments : [];
+
+    const existingIds = new Set(parsed.places.map((p) => String(p._id)));
+    let added = false;
+    for (const acc of new30Accommodations) {
+      if (!existingIds.has(String(acc._id))) {
+        parsed.places.push(acc);
+        existingIds.add(String(acc._id));
+        added = true;
+      }
+    }
+    if (added) {
+      await writeDb(parsed);
+    }
     return parsed;
   } catch {
     const initialDb = structuredClone(seedDb);
+    initialDb.places.push(...new30Accommodations);
+    initialDb.payments = [];
     await writeDb(initialDb);
     return initialDb;
   }
 }
 
 db = await readDb();
+
+function calculateBookingPrice(place, checkInDate, checkOutDate) {
+  const start = new Date(checkInDate);
+  const end = new Date(checkOutDate);
+  const nights = Math.max(1, Math.ceil((end - start) / 86400000));
+  const nightlyPrice = Number(place.price) || 0;
+  const subtotal = nights * nightlyPrice;
+  const tax = Math.round(subtotal * 0.12); // 12% GST standard
+  const serviceFee = Math.round(subtotal * 0.05); // 5% platform service fee
+  const total = subtotal + tax + serviceFee;
+  return {
+    nights,
+    nightlyPrice,
+    subtotal,
+    tax,
+    serviceFee,
+    total,
+  };
+}
 
 function publicUser(user) {
   if (!user) return null;
@@ -304,9 +340,11 @@ function publicPlace(place) {
 
 function publicBooking(booking) {
   const place = db.places.find((p) => p._id === booking.place);
+  const payment = (db.payments || []).find((pay) => pay.bookingId === booking._id || pay.paymentId === booking.paymentId);
   return {
     ...booking,
     place: place ? publicPlace(place) : null,
+    payment: payment || null,
   };
 }
 
@@ -395,7 +433,12 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json({ limit: "3mb" }));
+app.use(express.json({
+  limit: "3mb",
+  verify: (req, _res, buf) => {
+    req.rawBody = buf;
+  },
+}));
 app.use(cookieParser());
 app.use("/uploads", express.static(UPLOAD_DIR));
 
@@ -662,11 +705,22 @@ app.post("/api/bookings", requireAuth, async (req, res) => {
     if (!name) return sendError(res, 400, "Guest name is required");
     const conflict = db.bookings.some((booking) => booking.place === place._id && overlaps(start, end, new Date(booking.checkIn), new Date(booking.checkOut)));
     if (conflict) return sendError(res, 409, "Property is not available for the selected dates");
-    const nights = Math.max(1, Math.ceil((end - start) / 86400000));
+    const priceDetails = calculateBookingPrice(place, start, end);
     const booking = {
-      _id: crypto.randomUUID(), place: place._id, user: req.user._id,
-      checkIn: start.toISOString(), checkOut: end.toISOString(), numberOfGuests: guests,
-      name, price: nights * place.price, paymentStatus: "pending", createdAt: new Date().toISOString(),
+      _id: crypto.randomUUID(),
+      place: place._id,
+      user: req.user._id,
+      checkIn: start.toISOString(),
+      checkOut: end.toISOString(),
+      numberOfGuests: guests,
+      name,
+      nights: priceDetails.nights,
+      price: priceDetails.total,
+      subtotal: priceDetails.subtotal,
+      tax: priceDetails.tax,
+      serviceFee: priceDetails.serviceFee,
+      paymentStatus: "pending",
+      createdAt: new Date().toISOString(),
     };
     await writeDb({ ...db, bookings: [...db.bookings, booking] });
     return res.status(201).json(publicBooking(booking));
@@ -697,64 +751,217 @@ app.delete("/api/bookings/:id", requireAuth, async (req, res) => {
 });
 
 app.post("/api/placesBooking", requireAuth, async (req, res) => {
-  const amount = toNumber(req.body?.amount, 0);
   const bookingId = req.body?.bookingId || null;
-  if (amount <= 0) return sendError(res, 400, "Invalid payment amount");
+  if (!bookingId) return sendError(res, 400, "Booking ID is required");
 
-  if (process.env.KEY_ID && process.env.KEY_SECRET && !String(process.env.KEY_ID).startsWith("your_")) {
+  const booking = db.bookings.find((b) => b._id === bookingId);
+  if (!booking) return sendError(res, 404, "Booking not found");
+  if (booking.user !== req.user._id) return sendError(res, 403, "Access denied to this booking");
+  if (booking.paymentStatus === "paid") return sendError(res, 400, "This booking is already paid");
+
+  const place = db.places.find((p) => p._id === booking.place);
+  const priceDetails = place
+    ? calculateBookingPrice(place, booking.checkIn, booking.checkOut)
+    : { nights: 1, subtotal: booking.price, tax: 0, serviceFee: 0, total: booking.price };
+
+  // Always use server-calculated total to prevent amount tampering
+  const finalAmount = priceDetails.total;
+  const amountPaise = Math.round(finalAmount * 100);
+
+  const razorpayKey = process.env.PAYMENT_PROVIDER_KEY_ID || process.env.KEY_ID;
+  const razorpaySecret = process.env.PAYMENT_PROVIDER_KEY_SECRET || process.env.KEY_SECRET;
+
+  if (razorpayKey && razorpaySecret && !String(razorpayKey).startsWith("your_")) {
     try {
-      const razorpay = new Razorpay({ key_id: process.env.KEY_ID, key_secret: process.env.KEY_SECRET });
+      const razorpay = new Razorpay({ key_id: razorpayKey, key_secret: razorpaySecret });
       const order = await razorpay.orders.create({
-        amount: Math.round(amount * 100),
+        amount: amountPaise,
         currency: "INR",
-        notes: { bookingId: bookingId || "", userId: req.user._id },
+        notes: { bookingId: booking._id, userId: req.user._id },
       });
-      return res.json({ mode: "razorpay", order, key: process.env.KEY_ID, bookingId });
+      return res.json({
+        mode: "razorpay",
+        order,
+        key: razorpayKey,
+        bookingId: booking._id,
+        breakdown: priceDetails,
+        supportedMethods: ["upi", "card", "netbanking", "wallet"],
+      });
     } catch (error) {
-      console.error("Razorpay error:", error.message);
-      return sendError(res, 502, "Razorpay could not create the payment order");
+      console.error("Razorpay order error:", error.message);
+      return sendError(res, 502, "Failed to create payment order with Razorpay");
     }
   }
 
-  // Local demo mode: no payment provider or credentials required.
+  // Interactive demo mode: returns simulated order with multi-method capabilities
+  const demoOrderId = `order_demo_${crypto.randomUUID().replace(/-/g, "").slice(0, 14)}`;
   return res.json({
     mode: "demo",
-    key: "demo",
-    order: { id: `demo_${crypto.randomUUID()}`, amount: Math.round(amount * 100), currency: "INR" },
-    bookingId,
+    key: "demo_key",
+    order: {
+      id: demoOrderId,
+      amount: amountPaise,
+      currency: "INR",
+    },
+    bookingId: booking._id,
+    breakdown: priceDetails,
+    supportedMethods: ["upi", "card", "netbanking", "wallet"],
   });
 });
 
 app.post("/api/verify", requireAuth, async (req, res) => {
-  const { bookingId, response = {} } = req.body || {};
-  if (response.demo) {
-    if (bookingId) {
-      const booking = db.bookings.find((b) => b._id === bookingId);
-      if (booking && (booking.user === req.user._id || !booking.user)) {
-        booking.paymentStatus = "paid";
-        booking.paidAt = new Date().toISOString();
-        await writeDb({ ...db });
+  const { bookingId, method = "upi", methodDetails = {}, response = {} } = req.body || {};
+  if (!bookingId) return sendError(res, 400, "Booking ID is required");
+
+  const booking = db.bookings.find((b) => b._id === bookingId);
+  if (!booking) return sendError(res, 404, "Booking not found");
+  if (booking.user !== req.user._id) return sendError(res, 403, "Access denied");
+
+  const razorpaySecret = process.env.PAYMENT_PROVIDER_KEY_SECRET || process.env.KEY_SECRET;
+
+  if (response.demo || !razorpaySecret || String(razorpaySecret).startsWith("your_")) {
+    const paymentId = response.razorpay_payment_id || `pay_demo_${crypto.randomUUID().replace(/-/g, "").slice(0, 14)}`;
+    const paymentRecord = {
+      _id: crypto.randomUUID(),
+      bookingId: booking._id,
+      userId: req.user._id,
+      provider: "placebooking-demo",
+      orderId: response.razorpay_order_id || `order_demo_${Date.now()}`,
+      paymentId,
+      amount: booking.price,
+      currency: "INR",
+      method: String(method).toLowerCase(),
+      methodDetails,
+      status: "captured",
+      verifiedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    db.payments = db.payments || [];
+    db.payments.push(paymentRecord);
+
+    booking.paymentStatus = "paid";
+    booking.paidAt = new Date().toISOString();
+    booking.paymentId = paymentId;
+    booking.paymentMethod = method;
+
+    await writeDb({ ...db });
+    return res.json({
+      verified: true,
+      demo: true,
+      bookingId: booking._id,
+      paymentId,
+      message: "Payment verified and booking confirmed",
+    });
+  }
+
+  if (!response.razorpay_order_id || !response.razorpay_payment_id || !response.razorpay_signature) {
+    return sendError(res, 400, "Missing payment signature verification parameters");
+  }
+
+  const body = `${response.razorpay_order_id}|${response.razorpay_payment_id}`;
+  const expected = crypto.createHmac("sha256", razorpaySecret).update(body).digest("hex");
+  if (expected !== response.razorpay_signature) {
+    return sendError(res, 400, "Invalid payment signature");
+  }
+
+  const paymentRecord = {
+    _id: crypto.randomUUID(),
+    bookingId: booking._id,
+    userId: req.user._id,
+    provider: "razorpay",
+    orderId: response.razorpay_order_id,
+    paymentId: response.razorpay_payment_id,
+    amount: booking.price,
+    currency: "INR",
+    method: String(method).toLowerCase(),
+    methodDetails,
+    status: "captured",
+    signature: response.razorpay_signature,
+    verifiedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  };
+
+  db.payments = db.payments || [];
+  db.payments.push(paymentRecord);
+
+  booking.paymentStatus = "paid";
+  booking.paidAt = new Date().toISOString();
+  booking.paymentId = response.razorpay_payment_id;
+  booking.paymentMethod = method;
+
+  await writeDb({ ...db });
+  return res.json({
+    verified: true,
+    bookingId: booking._id,
+    paymentId: response.razorpay_payment_id,
+    message: "Payment verified successfully",
+  });
+});
+
+app.post("/api/payment/webhook", async (req, res) => {
+  const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET || process.env.PAYMENT_PROVIDER_KEY_SECRET || process.env.KEY_SECRET;
+  const signature = req.headers["x-razorpay-signature"];
+
+  if (!webhookSecret || !signature) {
+    return res.status(400).json({ error: "Webhook signature or secret missing" });
+  }
+
+  try {
+    const rawBody = req.rawBody ? req.rawBody.toString("utf8") : JSON.stringify(req.body);
+    const expected = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
+    if (expected !== signature) {
+      return res.status(400).json({ error: "Invalid webhook signature" });
+    }
+
+    const event = req.body?.event;
+    const payload = req.body?.payload;
+
+    if (event === "payment.captured" || event === "order.paid") {
+      const paymentEntity = payload?.payment?.entity;
+      const orderEntity = payload?.order?.entity;
+      const bookingId = paymentEntity?.notes?.bookingId || orderEntity?.notes?.bookingId;
+
+      if (bookingId) {
+        const booking = db.bookings.find((b) => b._id === bookingId);
+        if (booking && booking.paymentStatus !== "paid") {
+          booking.paymentStatus = "paid";
+          booking.paidAt = new Date().toISOString();
+          booking.paymentId = paymentEntity?.id || booking.paymentId;
+
+          db.payments = db.payments || [];
+          const existingPayment = db.payments.find((p) => p.paymentId === paymentEntity?.id);
+          if (!existingPayment && paymentEntity) {
+            db.payments.push({
+              _id: crypto.randomUUID(),
+              bookingId: booking._id,
+              userId: booking.user,
+              provider: "razorpay",
+              orderId: paymentEntity.order_id,
+              paymentId: paymentEntity.id,
+              amount: paymentEntity.amount / 100,
+              currency: paymentEntity.currency || "INR",
+              method: paymentEntity.method || "unknown",
+              status: "captured",
+              verifiedAt: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+            });
+          }
+          await writeDb({ ...db });
+        }
       }
     }
-    return res.json({ verified: true, demo: true, bookingId });
+    return res.json({ status: "ok" });
+  } catch (err) {
+    console.error("Webhook processing error:", err);
+    return res.status(500).json({ error: "Webhook processing error" });
   }
-  if (!process.env.KEY_SECRET) return sendError(res, 503, "Payment verification is not configured");
-  if (!response.razorpay_order_id || !response.razorpay_payment_id || !response.razorpay_signature) {
-    return sendError(res, 400, "Invalid payment response");
-  }
-  const body = `${response.razorpay_order_id}|${response.razorpay_payment_id}`;
-  const expected = crypto.createHmac("sha256", process.env.KEY_SECRET).update(body).digest("hex");
-  if (expected !== response.razorpay_signature) return sendError(res, 400, "Signature invalid");
+});
 
-  if (bookingId) {
-    const booking = db.bookings.find((b) => b._id === bookingId);
-    if (booking && (booking.user === req.user._id || !booking.user)) {
-      booking.paymentStatus = "paid";
-      booking.paidAt = new Date().toISOString();
-      await writeDb({ ...db });
-    }
-  }
-  return res.json({ verified: true, bookingId });
+app.get("/api/user-payments", requireAuth, (req, res) => {
+  db.payments = db.payments || [];
+  const userPayments = db.payments.filter((p) => p.userId === req.user._id);
+  res.json(userPayments);
 });
 
 app.use((_req, res) => sendError(res, 404, "API route not found"));

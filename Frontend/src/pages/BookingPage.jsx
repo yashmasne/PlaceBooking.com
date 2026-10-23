@@ -4,12 +4,14 @@ import axios from "axios";
 import AddressLink from "../AddressLink";
 import PlaceGallery from "../PlaceGallery";
 import BookingDates from "../BookingDates";
+import PaymentModal from "../PaymentModal";
+import { FaShieldAlt, FaReceipt, FaLock } from "react-icons/fa";
 
 export default function BookingPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [booking, setBooking] = useState(null);
-  const [paying, setPaying] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -22,7 +24,6 @@ export default function BookingPage() {
         if (data) setBooking(data);
       })
       .catch(() => {
-        // Fallback to getting list
         axios
           .get("/bookings")
           .then(({ data }) => {
@@ -33,58 +34,6 @@ export default function BookingPage() {
           .catch(() => setError("Unable to load this booking."));
       });
   }, [id]);
-
-  async function handlePayment() {
-    if (!booking || paying || booking.paymentStatus === "paid") return;
-    setError("");
-    setSuccessMsg("");
-    setPaying(true);
-    try {
-      const { data } = await axios.post("/placesBooking", {
-        amount: booking.price,
-        bookingId: booking._id,
-      });
-
-      if (data.mode === "demo") {
-        await axios.post("/verify", {
-          bookingId: booking._id,
-          response: { demo: true, razorpay_order_id: data.order.id },
-        });
-        setBooking((prev) => ({ ...prev, paymentStatus: "paid" }));
-        setSuccessMsg("Payment completed successfully!");
-        return;
-      }
-
-      if (!window.Razorpay) {
-        setError("Razorpay checkout is not loaded. Configure real credentials or use demo mode.");
-        return;
-      }
-
-      const rzp = new window.Razorpay({
-        key: data.key,
-        amount: data.order.amount,
-        currency: data.order.currency,
-        order_id: data.order.id,
-        name: "PlaceBooking.com",
-        description: "PlaceBooking stay reservation",
-        handler: async (response) => {
-          try {
-            await axios.post("/verify", { bookingId: booking._id, response });
-            setBooking((prev) => ({ ...prev, paymentStatus: "paid" }));
-            setSuccessMsg("Payment verified and completed!");
-          } catch (err) {
-            setError(err.response?.data?.error || "Payment verification failed.");
-          }
-        },
-        theme: { color: "#F5385D" },
-      });
-      rzp.open();
-    } catch (err) {
-      setError(err.response?.data?.error || "Unable to start payment.");
-    } finally {
-      setPaying(false);
-    }
-  }
 
   async function handleCancel() {
     if (!window.confirm("Are you sure you want to cancel this booking?")) return;
@@ -99,6 +48,17 @@ export default function BookingPage() {
     }
   }
 
+  function handlePaymentSuccess(paymentData) {
+    setBooking((prev) => ({
+      ...prev,
+      paymentStatus: "paid",
+      paymentId: paymentData.paymentId,
+      paidAt: new Date().toISOString(),
+      payment: paymentData,
+    }));
+    setSuccessMsg("Payment verified and completed successfully!");
+  }
+
   if (!booking) {
     return (
       <div className="text-center py-16">
@@ -111,10 +71,14 @@ export default function BookingPage() {
   }
 
   const isPaid = booking.paymentStatus === "paid";
+  const nights = booking.nights || 1;
+  const subtotal = booking.subtotal || Math.round(booking.price / 1.17);
+  const tax = booking.tax || Math.round(subtotal * 0.12);
+  const serviceFee = booking.serviceFee || Math.round(subtotal * 0.05);
 
   return (
     <div className="my-8 max-w-5xl mx-auto">
-      <Link to="/account/bookings" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-black mb-4">
+      <Link to="/account/bookings" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-black mb-4 font-medium transition-colors">
         ← Back to My Bookings
       </Link>
 
@@ -126,7 +90,7 @@ export default function BookingPage() {
         <span
           className={`self-start sm:self-auto text-sm px-4 py-1.5 rounded-full font-semibold border ${
             isPaid
-              ? "bg-green-100 text-green-800 border-green-300"
+              ? "bg-emerald-100 text-emerald-800 border-emerald-300"
               : "bg-amber-100 text-amber-800 border-amber-300"
           }`}
         >
@@ -134,35 +98,87 @@ export default function BookingPage() {
         </span>
       </div>
 
-      {error && <div className="bg-red-100 text-red-700 p-3 rounded-xl my-4 border border-red-200">{error}</div>}
-      {successMsg && <div className="bg-green-100 text-green-700 p-3 rounded-xl my-4 border border-green-200">{successMsg}</div>}
+      {error && <div className="bg-red-50 text-red-700 p-3 rounded-xl my-4 border border-red-200 text-sm">{error}</div>}
+      {successMsg && <div className="bg-emerald-50 text-emerald-800 p-3.5 rounded-xl my-4 border border-emerald-200 text-sm font-medium">{successMsg}</div>}
 
-      <div className="bg-gray-100 p-6 my-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-8 border border-gray-200">
+      <div className="bg-white p-6 my-6 rounded-3xl shadow-sm border border-gray-200/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         <div className="w-full">
-          <h2 className="text-2xl font-semibold mb-4 text-gray-800">Your reservation details</h2>
-          <BookingDates booking={booking} />
-          <div className="mt-4 pt-4 border-t border-gray-300/60 text-sm text-gray-700 space-y-1">
-            <p><span className="font-medium text-gray-900">Guest name:</span> {booking.name}</p>
-            <p><span className="font-medium text-gray-900">Number of guests:</span> {booking.numberOfGuests}</p>
-            <p className="text-lg font-bold text-gray-900 mt-2">
-              Total price: ₹{booking.price}
-            </p>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Reservation Summary</h2>
+            <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-mono">
+              Ref: {booking._id.slice(0, 10)}
+            </span>
           </div>
+
+          <BookingDates booking={booking} />
+
+          <div className="mt-5 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Guest Name</p>
+              <p className="font-medium text-gray-900">{booking.name}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Guests</p>
+              <p className="font-medium text-gray-900">{booking.numberOfGuests} guests</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Duration</p>
+              <p className="font-medium text-gray-900">{nights} {nights === 1 ? "night" : "nights"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Total Price</p>
+              <p className="text-lg font-bold text-primary">₹{booking.price?.toLocaleString()}</p>
+            </div>
+          </div>
+
+          {/* Transparent Itemized Price Breakdown */}
+          <div className="mt-4 pt-4 border-t border-gray-100 bg-gray-50/70 p-3.5 rounded-2xl text-xs text-gray-600 space-y-1">
+            <div className="flex justify-between">
+              <span>Accommodation ({nights} nights):</span>
+              <span className="font-medium text-gray-900">₹{subtotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Goods & Services Tax (GST 12%):</span>
+              <span className="font-medium text-gray-900">₹{tax.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>PlaceBooking Service Fee (5%):</span>
+              <span className="font-medium text-gray-900">₹{serviceFee.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between border-t border-gray-200/80 pt-1.5 font-bold text-xs text-gray-900">
+              <span>Total Amount:</span>
+              <span className="text-primary font-bold">₹{booking.price?.toLocaleString()}</span>
+            </div>
+          </div>
+
+          {/* Payment receipt confirmation info if paid */}
+          {isPaid && (
+            <div className="mt-4 p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl flex items-center gap-3 text-xs text-emerald-900">
+              <FaReceipt className="text-emerald-600 text-lg shrink-0" />
+              <div>
+                <p className="font-bold">Payment Verified & Captured</p>
+                <p className="text-emerald-700 font-mono text-[11px]">
+                  Transaction ID: {booking.paymentId || booking.payment?.paymentId || "Captured via Razorpay Gateway"}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="w-full md:w-auto shrink-0 flex flex-col gap-3">
+        {/* Action Controls */}
+        <div className="w-full md:w-56 shrink-0 flex flex-col gap-3">
           {!isPaid ? (
             <button
               type="button"
-              onClick={handlePayment}
-              disabled={paying}
-              className="primary w-full md:w-48 py-3 disabled:opacity-50 text-base font-semibold shadow-md"
+              onClick={() => setShowPaymentModal(true)}
+              className="w-full bg-gradient-to-r from-primary to-rose-600 hover:from-primary/95 hover:to-rose-700 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all text-sm flex items-center justify-center gap-2"
             >
-              {paying ? "Processing..." : `Pay ₹${booking.price}`}
+              <FaLock className="text-xs" />
+              Pay ₹{booking.price?.toLocaleString()}
             </button>
           ) : (
-            <div className="bg-green-50 border border-green-300 text-green-800 text-center py-3 px-6 rounded-2xl font-semibold">
-              ✓ Booking Paid
+            <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 text-center py-3.5 px-6 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+              <FaShieldAlt /> Confirmed
             </div>
           )}
 
@@ -170,14 +186,23 @@ export default function BookingPage() {
             type="button"
             onClick={handleCancel}
             disabled={cancelling}
-            className="w-full md:w-48 py-2 text-sm text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded-2xl disabled:opacity-50 font-medium transition-colors"
+            className="w-full py-2.5 text-xs text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded-2xl disabled:opacity-50 font-semibold transition-colors"
           >
-            {cancelling ? "Cancelling..." : "Cancel booking"}
+            {cancelling ? "Cancelling..." : "Cancel Reservation"}
           </button>
         </div>
       </div>
 
       {booking.place && <PlaceGallery place={booking.place} />}
+
+      {/* Payment Selection & Checkout Modal */}
+      {showPaymentModal && (
+        <PaymentModal
+          booking={booking}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 }
