@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { FaStar, FaRegStar, FaCheckCircle } from "react-icons/fa";
 import { UserContext } from "./UserContext";
 import { useToast } from "./ToastContext";
+import { useConfirm } from "./ConfirmContext";
 
 const INITIAL_VISIBLE = 4;
 const MIN_LENGTH = 10;
@@ -31,6 +32,7 @@ function initials(name = "") {
 export default function PlaceReviews({ place, onSummaryChange }) {
   const { user } = useContext(UserContext);
   const toast = useToast();
+  const confirm = useConfirm();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
@@ -84,7 +86,14 @@ export default function PlaceReviews({ place, onSummaryChange }) {
   }
 
   async function deleteReview() {
-    if (!myReview || !window.confirm("Delete your review?")) return;
+    if (!myReview) return;
+    const confirmed = await confirm({
+      title: "Delete your review?",
+      message: "Your rating and comment will be removed from this stay.",
+      confirmLabel: "Delete review",
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       const { data } = await axios.delete(`/reviews/${myReview._id}`);
       setReviews((prev) => prev.filter((review) => review._id !== myReview._id));

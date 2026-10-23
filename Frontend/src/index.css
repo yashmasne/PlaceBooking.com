@@ -29,8 +29,18 @@ button{
     from{ width: 100%; }
     to{ width: 0%; }
 }
+.dialog-backdrop{
+    animation: dialog-fade 150ms ease-out;
+}
+.dialog-panel{
+    animation: toast-in 180ms ease-out;
+}
+@keyframes dialog-fade{
+    from{ opacity: 0; }
+    to{ opacity: 1; }
+}
 @media (prefers-reduced-motion: reduce){
-    .toast-enter, .toast-progress{ animation: none; }
+    .toast-enter, .toast-progress, .dialog-backdrop, .dialog-panel{ animation: none; }
 }
 button.primary{
     background-color: #F5385D;

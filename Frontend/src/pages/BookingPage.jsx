@@ -6,11 +6,13 @@ import PlaceGallery from "../PlaceGallery";
 import BookingDates from "../BookingDates";
 import PaymentModal from "../PaymentModal";
 import { useToast } from "../ToastContext";
+import { useConfirm } from "../ConfirmContext";
 import { FaShieldAlt, FaReceipt, FaLock } from "react-icons/fa";
 
 export default function BookingPage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const confirm = useConfirm();
   const { id } = useParams();
   const [booking, setBooking] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -38,7 +40,14 @@ export default function BookingPage() {
   }, [id]);
 
   async function handleCancel() {
-    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+    const confirmed = await confirm({
+      title: "Cancel this booking?",
+      message: `Your reservation at ${booking.place?.title || "this stay"} will be cancelled. This can't be undone.`,
+      confirmLabel: "Cancel booking",
+      cancelLabel: "Keep booking",
+      danger: true,
+    });
+    if (!confirmed) return;
     setCancelling(true);
     setError("");
     try {

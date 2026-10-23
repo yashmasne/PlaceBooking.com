@@ -6,9 +6,11 @@ import PlaceImg from "../PlaceImg";
 import { FiEdit3 } from "react-icons/fi";
 import { MdDelete } from "react-icons/md";
 import { useToast } from "../ToastContext";
+import { useConfirm } from "../ConfirmContext";
 
 export default function PlacesPage() {
   const toast = useToast();
+  const confirm = useConfirm();
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +26,13 @@ export default function PlacesPage() {
   }
 
   async function handleDelete(placeId) {
-    if (!window.confirm("Delete this place? This action cannot be undone.")) return;
+    const confirmed = await confirm({
+      title: "Delete this listing?",
+      message: "Guests will no longer be able to find or book it. This can't be undone.",
+      confirmLabel: "Delete listing",
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`/user-places/${placeId}`);
       setPlaces((current) => current.filter((place) => place._id !== placeId));
