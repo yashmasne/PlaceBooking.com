@@ -8,6 +8,7 @@ import { WishlistContext } from "../WishlistContext";
 import { UserContext } from "../UserContext";
 import { useToast } from "../ToastContext";
 import PlaceReviews from "../PlaceReviews";
+import PlaceMap from "../PlaceMap";
 import {
   FaStar,
   FaHeart,
@@ -263,6 +264,7 @@ export default function PlacePage() {
         place={place}
         onSummaryChange={(summary) => setPlace((prev) => ({ ...prev, ...summary }))}
       />
+      <PlaceMap address={place.address} />
     </div>
   );
 }
