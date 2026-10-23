@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useContext, useState, useRef, useEffect } from "react";
 import { UserContext } from "./UserContext.jsx";
 import { WishlistContext } from "./WishlistContext.jsx";
+import { useToast } from "./ToastContext.jsx";
 import { FaHeart, FaUserCircle, FaBars } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
 import axios from "axios";
@@ -12,6 +13,7 @@ export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const toast = useToast();
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -30,8 +32,10 @@ export default function Header() {
       setUser(null);
       setDropdownOpen(false);
       navigate("/");
+      toast.info("You've been logged out.");
     } catch (err) {
       console.error("Logout failed:", err);
+      toast.error("Logout failed. Please try again.");
     }
   }
 

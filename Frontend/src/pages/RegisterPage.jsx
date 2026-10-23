@@ -1,9 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
+import { useToast } from "../ToastContext.jsx";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,6 +36,7 @@ export default function RegisterPage() {
         email: email.trim().toLowerCase(),
         password,
       });
+      toast.success("Account created! Log in to start booking.");
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed. Please try again.");

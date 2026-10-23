@@ -3,6 +3,7 @@ import { differenceInCalendarDays } from "date-fns";
 import axios from "axios";
 import { Navigate, useNavigate } from "react-router-dom";
 import { UserContext } from "./UserContext.jsx";
+import { useToast } from "./ToastContext.jsx";
 import { FaStar, FaShieldAlt } from "react-icons/fa";
 
 export default function BookingWidget({ place }) {
@@ -15,6 +16,7 @@ export default function BookingWidget({ place }) {
   const [loading, setLoading] = useState(false);
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     if (user) setName(user.name || "");
@@ -29,6 +31,7 @@ export default function BookingWidget({ place }) {
     setError("");
 
     if (!user) {
+      toast.info("Log in to reserve this stay.");
       navigate("/login");
       return;
     }
@@ -54,6 +57,7 @@ export default function BookingWidget({ place }) {
         name: name.trim(),
         place: place._id,
       });
+      toast.success("Reservation created! Complete payment to confirm your stay.", 5000);
       setRedirect(`/account/bookings/${data._id}`);
     } catch (err) {
       setError(err.response?.data?.error || "Unable to create booking.");

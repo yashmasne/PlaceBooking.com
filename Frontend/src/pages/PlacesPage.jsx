@@ -5,8 +5,10 @@ import axios from "axios";
 import PlaceImg from "../PlaceImg";
 import { FiEdit3 } from "react-icons/fi";
 import { MdDelete } from "react-icons/md";
+import { useToast } from "../ToastContext";
 
 export default function PlacesPage() {
+  const toast = useToast();
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,8 +28,9 @@ export default function PlacesPage() {
     try {
       await axios.delete(`/user-places/${placeId}`);
       setPlaces((current) => current.filter((place) => place._id !== placeId));
+      toast.success("Listing deleted.");
     } catch (error) {
-      alert(error.response?.data?.error || "Unable to delete place.");
+      toast.error(error.response?.data?.error || "Unable to delete place.");
     }
   }
 

@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import AccountNav from "../AccountNav";
 import { Navigate, useParams } from "react-router-dom";
+import { useToast } from "../ToastContext";
 
 export default function PlacesFormPage() {
   const { id } = useParams();
+  const toast = useToast();
   const [title, setTitle] = useState("");
   const [address, setAddress] = useState("");
   const [category, setCategory] = useState("City apartments");
@@ -93,6 +95,7 @@ export default function PlacesFormPage() {
       } else {
         await axios.post("/places", placeData);
       }
+      toast.success(id ? "Listing updated." : "Your listing is live!");
       setRedirect(true);
     } catch (err) {
       setError(err.response?.data?.error || "Unable to save property. Please try again.");

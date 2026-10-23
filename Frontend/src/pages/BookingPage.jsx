@@ -5,10 +5,12 @@ import AddressLink from "../AddressLink";
 import PlaceGallery from "../PlaceGallery";
 import BookingDates from "../BookingDates";
 import PaymentModal from "../PaymentModal";
+import { useToast } from "../ToastContext";
 import { FaShieldAlt, FaReceipt, FaLock } from "react-icons/fa";
 
 export default function BookingPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const { id } = useParams();
   const [booking, setBooking] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -41,9 +43,12 @@ export default function BookingPage() {
     setError("");
     try {
       await axios.delete(`/bookings/${booking._id}`);
+      toast.success("Your booking has been cancelled.");
       navigate("/account/bookings");
     } catch (err) {
-      setError(err.response?.data?.error || "Unable to cancel booking.");
+      const message = err.response?.data?.error || "Unable to cancel booking.";
+      setError(message);
+      toast.error(message);
       setCancelling(false);
     }
   }
@@ -57,6 +62,7 @@ export default function BookingPage() {
       payment: paymentData,
     }));
     setSuccessMsg("Payment verified and completed successfully!");
+    toast.success("Payment successful — your stay is confirmed!", 5000);
   }
 
   if (!booking) {

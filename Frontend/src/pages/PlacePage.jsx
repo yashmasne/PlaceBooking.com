@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import BookingWidget from "../BookingWidget";
@@ -6,6 +6,7 @@ import PlaceGallery from "../PlaceGallery";
 import AddressLink from "../AddressLink";
 import { WishlistContext } from "../WishlistContext";
 import { UserContext } from "../UserContext";
+import { useToast } from "../ToastContext";
 import {
   FaStar,
   FaHeart,
@@ -30,6 +31,8 @@ export default function PlacePage() {
 
   const { isWishlisted, toggleWishlist } = useContext(WishlistContext);
   const { user } = useContext(UserContext);
+  const toast = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -53,10 +56,24 @@ export default function PlacePage() {
 
   const wishlisted = place ? isWishlisted(place._id) : false;
 
-  function handleShare() {
-    navigator.clipboard?.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function handleShare() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success("Link copied to clipboard.");
+    } catch {
+      toast.error("Couldn't copy the link. You can copy it from the address bar.");
+    }
+  }
+
+  function handleSave() {
+    if (!user) {
+      toast.info("Log in to save stays to your wishlist.");
+      navigate("/login");
+      return;
+    }
+    toggleWishlist(place._id);
   }
 
   if (loading) {
@@ -131,7 +148,7 @@ export default function PlacePage() {
 
             <button
               type="button"
-              onClick={() => toggleWishlist(place._id)}
+              onClick={handleSave}
               className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-100 py-1.5 px-3 rounded-lg transition-colors"
             >
               {wishlisted ? (

@@ -3,11 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import Image from "./Image.jsx";
 import { WishlistContext } from "./WishlistContext";
 import { UserContext } from "./UserContext";
+import { useToast } from "./ToastContext";
 import { FaHeart, FaRegHeart, FaStar } from "react-icons/fa";
 
 export default function PlaceCard({ place }) {
   const { isWishlisted, toggleWishlist } = useContext(WishlistContext);
   const { user } = useContext(UserContext);
+  const toast = useToast();
   const navigate = useNavigate();
 
   const wishlisted = isWishlisted(place._id);
@@ -17,6 +19,7 @@ export default function PlaceCard({ place }) {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
+      toast.info("Log in to save stays to your wishlist.");
       navigate("/login");
       return;
     }

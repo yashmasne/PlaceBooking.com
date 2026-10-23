@@ -2,6 +2,7 @@ import { Link, Navigate } from "react-router-dom";
 import { useContext, useState } from "react";
 import axios from "axios";
 import { UserContext } from "../UserContext.jsx";
+import { useToast } from "../ToastContext.jsx";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { setUser } = useContext(UserContext);
+  const toast = useToast();
 
   async function handleLoginSubmit(ev) {
     ev.preventDefault();
@@ -27,6 +29,7 @@ export default function LoginPage() {
         password,
       });
       setUser(data);
+      toast.success(`Welcome back, ${data?.name?.split(" ")[0] || "traveller"}!`);
       setRedirect(true);
     } catch (err) {
       setError(err.response?.data?.error || "Login failed. Please check your credentials.");
