@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { format } from "date-fns";
@@ -11,6 +11,11 @@ const INITIAL_VISIBLE = 4;
 const MIN_LENGTH = 10;
 const MAX_LENGTH = 1000;
 const ratingLabels = ["", "Terrible", "Poor", "Okay", "Great", "Excellent"];
+const sorters = {
+  newest: (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+  highest: (a, b) => b.rating - a.rating || new Date(b.createdAt) - new Date(a.createdAt),
+  lowest: (a, b) => a.rating - b.rating || new Date(b.createdAt) - new Date(a.createdAt),
+};
 
 function Stars({ value, className = "" }) {
   return (
@@ -36,6 +41,7 @@ export default function PlaceReviews({ place, onSummaryChange }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [sortBy, setSortBy] = useState("newest");
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -104,7 +110,12 @@ export default function PlaceReviews({ place, onSummaryChange }) {
     }
   }
 
-  const visible = showAll ? reviews : reviews.slice(0, INITIAL_VISIBLE);
+  const sortedReviews = useMemo(() => [...reviews].sort(sorters[sortBy]), [reviews, sortBy]);
+  const breakdown = useMemo(
+    () => [5, 4, 3, 2, 1].map((stars) => ({ stars, count: reviews.filter((r) => r.rating === stars).length })),
+    [reviews]
+  );
+  const visible = showAll ? sortedReviews : sortedReviews.slice(0, INITIAL_VISIBLE);
   const shownRating = hoverRating || rating;
 
   return (
@@ -135,7 +146,38 @@ export default function PlaceReviews({ place, onSummaryChange }) {
         </p>
       ) : (
         <>
-          <div className="grid sm:grid-cols-2 gap-x-12 gap-y-8 mt-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mt-6">
+            <div className="w-full max-w-xs space-y-1.5" aria-label="Rating breakdown of written reviews">
+              {breakdown.map(({ stars, count }) => (
+                <div key={stars} className="flex items-center gap-3 text-xs text-gray-600">
+                  <span className="w-3 text-right font-medium">{stars}</span>
+                  <FaStar className="text-amber-500 shrink-0" />
+                  <div className="grow h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gray-900 rounded-full"
+                      style={{ width: `${(count / reviews.length) * 100}%` }}
+                    />
+                  </div>
+                  <span className="w-5 text-right tabular-nums">{count}</span>
+                </div>
+              ))}
+            </div>
+            {reviews.length > 1 && (
+              <label className="flex items-center gap-2 text-sm text-gray-600 shrink-0">
+                Sort by
+                <select
+                  value={sortBy}
+                  onChange={(ev) => setSortBy(ev.target.value)}
+                  className="text-sm font-medium py-2 px-3 bg-white border border-gray-200 rounded-full text-gray-800 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="highest">Highest rated</option>
+                  <option value="lowest">Lowest rated</option>
+                </select>
+              </label>
+            )}
+          </div>
+          <div className="grid sm:grid-cols-2 gap-x-12 gap-y-8 mt-8">
             {visible.map((review) => (
               <article key={review._id}>
                 <div className="flex items-center gap-3">
