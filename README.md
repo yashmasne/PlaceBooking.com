@@ -66,8 +66,7 @@ To try booking, reviews and wishlists, create an account with **Sign up** — th
 | Team Member | Role | Contribution |
 |---|---|---:|
 | **Yash Masne** | Team Leader | **35%** |
-| Prathmesh Borade | Member | **10%** |
+| Prathmesh Borade | Member | **20%** |
 | Prathmesh Yerawar | Member | **20%** |
 | Tushar Ranjan Pasayat | Member | **15%** |
 | Chandrashekhar Samshete | Member | **20%** |
-| **Total** | | **100%** |
