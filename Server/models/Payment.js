@@ -12,7 +12,7 @@ const paymentSchema = new mongoose.Schema(
     method: { type: String, default: "upi" },
     status: {
       type: String,
-      enum: ["created", "captured", "failed", "pending", "refunded"],
+      enum: ["created", "Captured", "failed", "pending", "refunded"],
       default: "created",
       index: true,
     },
